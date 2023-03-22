@@ -1,14 +1,18 @@
 from FileObject import FileObject 
 import os
-import requests
 class Library:
-    def __init__(self, foldername):
+    def __init__(self, foldername,optional_count=-1):
         self.FileObjects= []
         self.folderName = foldername
+        self.optional_count = optional_count
         self.get_objects()
     def get_objects(self):
         directory = self.folderName
-        for file in os.listdir(directory):
+        direct_list = os.listdir(directory)
+        if self.optional_count < 0:
+            self.optional_count = len(direct_list)
+
+        for file in direct_list[:self.optional_count]: 
             filename = os.fsdecode(file)
             if filename.endswith(".mp3"):
                 #print("filename: {filename}, directory: {directory}".format(
@@ -16,28 +20,15 @@ class Library:
                 path = os.path.join(directory, filename)
                 current_song = FileObject(path)
                 self.FileObjects.append(current_song)
-                break
     def print_objects(self):
-        for song in self.FileObjects[:5]:
+        for song in self.FileObjects:
             song.get_song_data()
         
-    def fetch(self):
-        #Gets the current Libary
-        #gets list of song objects
-        pass
-    
-    def get_genre(self):
-        first_obj = self.FileObjects[0]
         
-    def get_track_id(self):
-        first_obj = self.FileObjects[0]
-        #print(first_obj.searching_name)
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36'}
-        url = "https://www.chosic.com/api/tools/search?q={search_name}&type=track&limit=1".format(
-                search_name="righteous juice wrld")
-        response = requests.get(url,headers=headers)
-        print(response.status_code, response.url)
-
+    def get_genres(self):
+        for song in self.FileObjects:
+            song.get_genre()
+            song.set_genre()
 
 #example_file = r"/Users/mrdenitz/Downloads/songs_downloaded_1879/01 Goodmorning.mp3"
 #example = FileObject(example_file)
@@ -46,6 +37,7 @@ class Library:
 #example.get_song_data()
 #
 example_folder = str("/Users/mrdenitz/Downloads/songs_downloaded_1879/")
-lib = Library(example_folder)
+lib = Library(example_folder,1)
 lib.print_objects()
+#lib.get_genres()
 #lib.get_track_id()
