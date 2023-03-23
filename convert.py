@@ -1,5 +1,6 @@
 from FileObject import FileObject 
 import os
+import time
 class Library:
     def __init__(self, foldername,optional_count=-1):
         self.FileObjects= []
@@ -25,10 +26,19 @@ class Library:
             song.get_song_data()
         
         
-    def get_genres(self):
-        for song in self.FileObjects:
-            song.get_genre()
-            song.set_genre()
+    def set_genres(self):
+        for chunk in self.chunks(self.FileObjects,25):
+            for song in chunk:
+                song.get_genre()
+                song.set_genre()
+            time.sleep(3)
+     
+
+    
+    def chunks(self,lst,n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
 
 #example_file = r"/Users/mrdenitz/Downloads/songs_downloaded_1879/01 Goodmorning.mp3"
 #example = FileObject(example_file)
@@ -37,7 +47,12 @@ class Library:
 #example.get_song_data()
 #
 example_folder = str("/Users/mrdenitz/Downloads/songs_downloaded_1879/")
-lib = Library(example_folder,1)
-lib.print_objects()
-#lib.get_genres()
+lib = Library(example_folder,52)
+print(len(lib.FileObjects))
+#lib.print_objects()
+lib.set_genres()
 #lib.get_track_id()
+print("-----")
+print("Succesfully converted Genres! See log files for errors or missing data")
+print("-----")
+lib.print_objects()
