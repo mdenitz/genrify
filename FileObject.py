@@ -30,13 +30,13 @@ class FileObject:
         if self.check_file_loaded():
             genre = self.mt_object['genre'].value
             self.name = self.mt_object['tracktitle']
-            artist = self.mt_object['artist'].value.split('feat.')[0].split(',')[0].split('&')[0].strip()
+            artist = self.mt_object['artist'].value.split('feat.')[0].split('ft.')[0].split(',')[0].split('&')[0].strip()
             track_num = self.mt_object['tracknumber']
             self.searching_name = "{artist}".format(
                     artist=artist)
             if artist is None or artist == "":
                 raise ValueError("Artist not found for Filename: {filename}".format(
-                    filename =self.name))
+                    filename = self.name))
 
             if genre is None or genre == "":
                 genre_message = "File doesnt have genre set"
