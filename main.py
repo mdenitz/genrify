@@ -1,5 +1,5 @@
 from convert import Library
-
+from Loader import Loader
 
 def __main__():
     OVERWRITE = False
@@ -7,7 +7,7 @@ def __main__():
     folder_name = str(input("Please provide the folder path containing your MP3s:\n"))
     overwrite_setting = str(input("Would you like to overwrite current file's genres if they exist? Y/y or N/n\n")).lower()
     
-    example_folder = str("/Users/mrdenitz/Downloads/songs_downloaded_1879/")
+    test = str("/Users/mrdenitz/Downloads/songs_downloaded_1879/")
     OVERWRITE = confirm(overwrite_setting)
     if OVERWRITE:
         you_sure = str(input("Are you sure you'd like to overwrite current song genres? Y/y or N/n\n")).lower()
@@ -15,11 +15,22 @@ def __main__():
     limit = str(input("Do you want to set a limit on how many songs you'd like to change? Y/y or N/n\n")).lower()
     if confirm(limit):
         song_limit = int(input("How many files do you want to change?\n"))
+    if folder_name == "":
+        folder_name = test
+    with Loader("Getting file song data...",""):
+        lib = Library(folder_name,OVERWRITE,song_limit)
+    loader = Loader("","")
 
-    lib = Library(example_folder,OVERWRITE,song_limit)
-    num_completed = lib.set_genres()
+    loader.start()
+    num_completed,num_artist_nf = lib.set_genres(loader)
+    loader.stop()
+    existing = lib.existing_count
     print("-----")
-    print("Succesfully converted {num_completed} Genres! See log files for errors or missing data".format(num_completed=num_completed))
+    print("Succesfully converted {num_completed} Genres!".format(num_completed=num_completed))
+    if num_artist_nf != 0:
+        print("{artist} songs couldnt be processed. See log files for errors or missing data".format(artist=num_artist_nf))
+    if existing != 0:
+        print("{existing} songs already have genres and were not overwritten.".format(existing=existing))
     print("-----")
     #lib.print_songs()
 

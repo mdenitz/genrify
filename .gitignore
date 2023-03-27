@@ -3,3 +3,4 @@ __pycache__/
 config.py
 missing_data.txt
 error_log.txt
+.cache

@@ -1,0 +1,2 @@
+music_tag==0.4.3
+spotipy==2.22.1

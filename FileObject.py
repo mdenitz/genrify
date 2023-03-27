@@ -68,6 +68,8 @@ class FileObject:
     def get_genre(self):
         if self.searching_name == "":
             no_artist_msg = "NO_ARTIST: No artist was found for filename: {filename}\n".format(filename=self.filename)
+            self.log("missing_data.txt",no_artist_msg)
+            return 1
         elif self.check_file_loaded():
             try:
                 results = FileObject.sp.search(q='artist:{}'.format(self.searching_name),
@@ -77,18 +79,20 @@ class FileObject:
                     #raise ValueError("Artist not found on Spotify API") 
                     self.log("error_log.txt","Artist:{artist}  not found on Spotify API\n".format(
                         artist=self.searching_name))
-                    return
+                    return 1 
                 genres = results['artists']['items'][0]['genres']
                 if genres == []:
                     no_genre_message = "NO_GENRE: No genre was found on the Spotify API for {artist}\n".format(artist=self.searching_name)
                     self.log("missing_data.txt",no_genre_message)
-                    return
+                    return 1
                 self.genres = " ".join(genre.capitalize() for genre in genres[0].split())
+                return 0
             except Exception as e:
                 self.genres = ""
                 error_message = "Filename: {filename}, Artist: {artist}, Genres: {genres} error: {e}\n".format(
                         filename=self.filename,artist=self.searching_name,genres=genres,e=str(e))
                 self.log("error_log.txt",error_message)
+                return 1
     def log(self,filename,message):
         f = open(filename, "a+")
         f.write(str(message))
