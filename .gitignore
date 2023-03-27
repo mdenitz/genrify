@@ -4,3 +4,4 @@ config.py
 missing_data.txt
 error_log.txt
 .cache
+.DS_Store
