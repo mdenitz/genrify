@@ -7,6 +7,7 @@ class FileObject:
                                              client_secret=config.client_secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
+    batch_number = 0
     def __init__(self,filename):
         #set default to false just incase it doesnt read
         self.filename = filename
@@ -93,7 +94,15 @@ class FileObject:
                         filename=self.filename,artist=self.searching_name,genres=genres,e=str(e))
                 self.log("error_log.txt",error_message)
                 return 1
+
     def log(self,filename,message):
-        f = open(filename, "a+")
-        f.write(str(message))
-        f.close()
+        try:
+
+            f = open(filename, "a+")
+            prnt_message = "Batch # {batch} - {message}".format(
+                    batch=FileObject.batch_num, message=message)
+            f.write(prnt_message)
+            f.close()
+        except Exception as e:
+            print("Couldnt log errors and/or missing data\n")
+            print(str(e))

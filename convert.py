@@ -40,6 +40,7 @@ class Library:
     def set_genres(self,loader):
         songs_changed = 0
         artist_nf = 0 
+        FileObject.batch_num = self.get_batch_num()
         for song in self.FileObjects:
             song.get_song_data()
             artist_nf += song.get_genre()
@@ -55,4 +56,23 @@ class Library:
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
             yield lst[i:i + n]
+
+    def get_batch_num(self):
+        error_file = "./error_log.txt"
+        missing_file = "./missing_data.txt"
+        batch_num = max(self.file_checker(error_file),self.file_checker(missing_file))
+        if batch_num != -1:
+            return batch_num + 1
+        else:
+            return 0
+
+    def file_checker(self,PATH):
+        batch_num = -1 
+        if os.path.isfile(PATH) and os.access(PATH, os.R_OK):
+            with open(PATH) as f:
+                for line in f:
+                    pass
+                last_line = line
+                batch_num = int(line.split(" ")[2])
+        return batch_num 
 
