@@ -1,11 +1,28 @@
 import music_tag as mt
 import spotipy
-import config
 import textwrap
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
+import importlib.util
+def check_config():
+    config_exist = importlib.util.find_spec("config")
+    if config_exist is None:
+        print("No config file found:\n")
+        client_id = str(input("Please enter Spotify API Client ID:\n"))
+        client_secret = str(input("Please enter Spotify API Client Secret:\n"))
+        with  open("config.py","w") as file:
+            l1 = "client_id='{}'\n".format(client_id)
+            l2 = "client_secret='{}'\n".format(client_secret)
+            file.writelines([l1, l2])
+        file.close()
+
+check_config()
+import config
+
+
 
 class FileObject:
     try:
+        check_config()
         client_credentials_manager = SCC(client_id=config.client_id,
                                                  client_secret=config.client_secret)
         sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)

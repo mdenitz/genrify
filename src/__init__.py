@@ -1,7 +1,22 @@
+#import importlib.util
 from convert import Library
 from Loader import Loader
+def check_config():
+    config_exist = importlib.util.find_spec("config")
+    if config_exist is None:
+        print("No config file found:\n")
+        client_id = str(input("Please enter Spotify API Client ID:\n"))
+        client_secret = str(input("Please enter Spotify API Client Secret:\n"))
+        with  open("config.py","w") as file:
+            l1 = "client_id='{}'\n".format(client_id)
+            l2 = "client_secret='{}'\n".format(client_secret)
+        file.writelines([l1, l2])
+        file.close()
+
 
 def __main__():
+    
+    
     OVERWRITE = False
     song_limit = -1
     folder_name = str(input("Please provide the folder path containing your MP3s:\n"))
