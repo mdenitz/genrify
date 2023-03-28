@@ -1,11 +1,18 @@
 import music_tag as mt
 import spotipy
 import config
+import textwrap
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
+
 class FileObject:
-    client_credentials_manager = SCC(client_id=config.client_id,
-                                             client_secret=config.client_secret)
-    sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+    try:
+        client_credentials_manager = SCC(client_id=config.client_id,
+                                                 client_secret=config.client_secret)
+        sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+    except Exception as e:
+        print("Issue with Oauth: {}".format(e))
+        exit()
+
 
     batch_number = 0
     def __init__(self,filename):
@@ -75,6 +82,7 @@ class FileObject:
             try:
                 results = FileObject.sp.search(q='artist:{}'.format(self.searching_name),
                                                type='artist',limit=1)
+
                 #self.log("debug.txt",str(results)+ " , ")
                 if results['artists']['items'] == []:
                     #raise ValueError("Artist not found on Spotify API") 
@@ -89,7 +97,11 @@ class FileObject:
                 self.genres = " ".join(genre.capitalize() for genre in genres[0].split())
                 return 0
             except Exception as e:
+                if e.__class__.__name__ == "ConnectionError":
+                    print("Couldnt connect to server\n")
+                    exit()
                 self.genres = ""
+                genres = ""
                 error_message = "Filename: {filename}, Artist: {artist}, Genres: {genres} error: {e}\n".format(
                         filename=self.filename,artist=self.searching_name,genres=genres,e=str(e))
                 self.log("error_log.txt",error_message)
@@ -99,9 +111,17 @@ class FileObject:
         try:
 
             f = open(filename, "a+")
-            prnt_message = "Batch # {batch} - {message}".format(
+           # prnt_message = "Batch # {batch} - {message}".format(
+           #         batch=FileObject.batch_num, message=message)
+            prnt_message = "batch # {batch} - {message}".format(
                     batch=FileObject.batch_num, message=message)
-            f.write(prnt_message)
+            prep = "\nBatch # {batch} - ".format(batch=FileObject.batch_num)
+             
+            #
+            #
+            #f.write(prnt_message)
+            f.write(textwrap.fill(text=message, width=299,initial_indent=prep,subsequent_indent=prep[1:],
+                                  ))
             f.close()
         except Exception as e:
             print("Couldnt log errors and/or missing data\n")
