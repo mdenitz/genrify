@@ -1,8 +1,13 @@
+import os
 import music_tag as mt
 import spotipy
 import textwrap
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
 import importlib.util
+from itertools import cycle
+from shutil import get_terminal_size
+from threading import Thread
+from time import sleep
 def check_config():
     """Checks if config file exists, if not then attempts to create one from user input"""
     config_exist = importlib.util.find_spec("config")
@@ -159,3 +164,127 @@ class FileObject:
         except Exception as e:
             print("Couldnt log errors and/or missing data\n")
             print(str(e))
+
+class Library:
+    def __init__(self, foldername,overwrite,optional_count=-1):
+        self.FileObjects= []
+        self.folderName = foldername
+        self.optional_count = optional_count
+        self.existing_count = 0
+        self.get_objects(overwrite)
+    def get_objects(self,overwrite):
+        directory = self.folderName
+        direct_list = os.listdir(directory)
+        if self.optional_count < 0:
+            self.optional_count = len(direct_list)
+        elif self.optional_count > len(direct_list):
+            self.optional_count = len(direct_list)
+        count = 0
+        for idx,file in enumerate(direct_list): 
+            if count >= self.optional_count:
+                break
+            filename = os.fsdecode(file)
+            if filename.endswith(".mp3"):
+                #print("filename: {filename}, directory: {directory}".format(
+                #filename=filename, directory=directory))
+                path = os.path.join(directory, filename)
+                current_song = FileObject(path)
+                if overwrite:
+                    self.FileObjects.append(current_song)
+                    count += 1
+                elif not overwrite and current_song.genres == "":
+                    self.FileObjects.append(current_song)
+                    count += 1
+                elif current_song.genres != "":
+                    self.existing_count += 1             
+    def print_songs(self):
+        for song in self.FileObjects:
+            song.print_song()
+        
+        
+    def set_genres(self,loader):
+        songs_changed = 0
+        artist_nf = 0 
+        FileObject.batch_num = self.get_batch_num()
+        for song in self.FileObjects:
+            song.get_song_data()
+            artist_nf += song.get_genre()
+            songs_changed += song.set_genre()
+            loader.message("{songs_changed}/{total} Converted. {issues} missing/errors".format(
+                songs_changed=songs_changed,total=len(self.FileObjects),issues=artist_nf))
+
+     
+        return songs_changed, artist_nf 
+
+    
+    def chunks(self,lst,n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
+    def get_batch_num(self):
+        error_file = "./error_log.txt"
+        missing_file = "./missing_data.txt"
+        batch_num = max(self.file_checker(error_file),self.file_checker(missing_file))
+        if batch_num != -1:
+            return batch_num + 1
+        else:
+            return 0
+
+    def file_checker(self,PATH):
+        batch_num = -1 
+        if os.path.isfile(PATH) and os.access(PATH, os.R_OK):
+            with open(PATH) as f:
+                for line in f:
+                    pass
+                last_line = line
+                batch_num = int(line.split(" ")[2])
+        return batch_num 
+
+
+class Loader:
+    def __init__(self, desc="Loading...", end="Done!", timeout=0.1):
+        """
+        A loader-like context manager
+
+        Args:
+            desc (str, optional): The loader's description. Defaults to "Loading...".
+            end (str, optional): Final print. Defaults to "Done!".
+            timeout (float, optional): Sleep time between prints. Defaults to 0.1.
+        """
+        self.desc = desc
+        self.end = end
+        self.timeout = timeout
+
+        self._thread = Thread(target=self._animate, daemon=True)
+        self.steps = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
+        self.done = False
+
+    def message(self,message):
+        self.desc = message
+    def start(self):
+        self._thread.start()
+        return self
+
+    def _animate(self):
+        for c in cycle(self.steps):
+            if self.done:
+                break
+            print(f"\r{self.desc} {c}", flush=True, end="")
+            sleep(self.timeout)
+
+    def __enter__(self):
+        self.start()
+
+    def stop(self):
+        self.done = True
+        cols = get_terminal_size((80, 20)).columns
+        print("\r" + " " * cols, end="", flush=True)
+        print(f"\r{self.end}", flush=True)
+
+    def __exit__(self, exc_type, exc_value, tb):
+        # handle exceptions with those variables ^
+        self.stop()
+
+
+
