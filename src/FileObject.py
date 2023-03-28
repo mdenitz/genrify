@@ -4,6 +4,7 @@ import textwrap
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
 import importlib.util
 def check_config():
+    """Checks if config file exists, if not then attempts to create one from user input"""
     config_exist = importlib.util.find_spec("config")
     if config_exist is None:
         print("No config file found:\n")
@@ -21,8 +22,23 @@ import config
 
 
 class FileObject:
+    """ FileObject contains file metadata and makes attempts to get mp3 genre
+
+    
+    Attributes:
+        filename (str): File's path
+        name (str): Title of the music track
+        searching_name (str): The artist name that will be searched
+        genres (str): The genre that will be applied to the song
+        read_success (bool): Checks if file read_succesfully
+        mt_object (obj): Music Tag object that is used to modify file
+
+
+        """
+    # Tries to utilize Spotipy Client Credential Flow
+    # If no config.py file initiated then results in erro
     try:
-        check_config()
+
         client_credentials_manager = SCC(client_id=config.client_id,
                                                  client_secret=config.client_secret)
         sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -38,13 +54,13 @@ class FileObject:
         self.name = ""
         self.searching_name = ""
         self.genres = "" 
-        self.failed_to_read = False 
+        self.read_success = False 
         self.mt_object = self.get_mt_object(filename)
         self.get_song_data()
     def get_mt_object(self,file):
         try:
             song = mt.load_file(file)
-            self.failed_to_read = True
+            self.read_success = True
             return song
         except:
             
@@ -79,7 +95,7 @@ class FileObject:
 
 
     def check_file_loaded(self):
-        if not self.failed_to_read:
+        if not self.read_success:
             return False
         return True
     def set_genre(self):
