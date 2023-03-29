@@ -3,5 +3,6 @@ __pycache__/
 config.py
 missing_data.txt
 error_log.txt
+success.txt
 .cache
 .DS_Store
