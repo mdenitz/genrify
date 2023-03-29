@@ -259,7 +259,7 @@ class FileObject:
             print("Couldnt log succesfully: error - {}\n".format(str(e)))
 
 class Library:
-"""Container Object that holds FileObjects to be manipulateda. Takes in optional parameters
+    """Container Object that holds FileObjects to be manipulateda. Takes in optional parameters
     collected from user input.
 
     Attributes:
@@ -396,19 +396,19 @@ class Library:
 
 
 class Loader:
-    def __init__(self, desc="Loading...", end="Done!", timeout=0.1):
-        """
-        A loader-like context manager
+    """A loader-like context manager.
 
-        Args:
-            desc (str, optional): The loader's description. Defaults to "Loading...".
-            end (str, optional): Final print. Defaults to "Done!".
-            timeout (float, optional): Sleep time between prints. Defaults to 0.1.
-        Attributes:
-            _thread (obj): private holds Thread object
-            steps (list): holds visualization steps
-            done (bool): False if ongoing, True if done
-        """
+    Args:
+        desc (str, optional): The loader's description. Defaults to "Loading...".
+        end (str, optional): Final print. Defaults to "Done!".
+        timeout (float, optional): Sleep time between prints. Defaults to 0.1.
+    Attributes:
+        _thread (obj): private holds Thread object
+        steps (list): holds visualization steps
+        done (bool): False if ongoing, True if done
+    """
+
+    def __init__(self, desc="Loading...", end="Done!", timeout=0.1):
         self.desc = desc
         self.end = end
         self.timeout = timeout
