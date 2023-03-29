@@ -45,6 +45,13 @@
   </h4>
 </div>
 
+<!--Description -->
+## :open_book: Description
+**Genrify is a tool to add genre metadata to your mp3 files.The genre is acquired by using the mp3 file's artist metadata to search for the respective genre.**   
+
+* The script will utilize your Spotify app credentials stored in a `config.py` file within the project directory. 
+* You will provide the path to a folder that contains mp3 files for genrify to process.  
+* You have the option of overwriting files that contain existing genres as well as the option to specify the number of mp3 files that will be processed.
 <!-- Getting Started -->
 ## 	:toolbox: Getting Started
 
@@ -77,7 +84,7 @@ Run the script
 `$ python3 genrify.py`
 
 
-## Spotify Credentials 
+## :closed_lock_with_key: Spotify Credentials 
 
 If you do not have a config.py file upon initial run you will be prompted to create one.  
 
@@ -89,7 +96,7 @@ Inside `config.py` please insert the following if script doesn't succesfully cre
 
 
 
-## Getting Folder Path
+## :open_file_folder: Getting Folder Path
 
 The script will ask you for a folder that contains mp3s to be converted. Please get the folder path.
 
@@ -99,7 +106,6 @@ You can either:
 2. Drag the folder into the terminal window when prompted to provide the folder path.
 
 Does not currently check in nested folders
-
 
 
 
