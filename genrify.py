@@ -194,21 +194,28 @@ class FileObject:
         Returns:
             int: 1 if artist not found and log happens, 0 if artist found
         
+        Exceptions: Failed search resulting in 401 response will yield 
+        Connection Error.Other errors non connection related will be logged.
         """
+        #No artist name
         if self.searching_name == "":
             no_artist_msg = "NO_ARTIST: No artist was found for filename: {filename}\n".format(filename=self.file_path)
             self.log("missing_data.txt",no_artist_msg)
             return 1
+        # if file is loaded
         elif self.check_file_loaded():
             try:
+                # API CALL
                 results = FileObject.sp.search(q='artist:{}'.format(self.searching_name),
                                                type='artist',limit=1)
 
+                # Artist not found on Spotify
                 if results['artists']['items'] == []:
                     self.log("error_log.txt","Artist:{artist}  not found on Spotify API\n".format(
                         artist=self.searching_name))
                     return 1 
                 genres = results['artists']['items'][0]['genres']
+                # No genre found on Spotify for the artist
                 if genres == []:
                     no_genre_message = "NO_GENRE: No genre was found on the Spotify API for {artist}\n".format(artist=self.searching_name)
                     self.log("missing_data.txt", no_genre_message)
@@ -239,15 +246,12 @@ class FileObject:
         try:
 
             f = open(filename, "a+")
-           # prnt_message = "Batch # {batch} - {message}".format(
-           #         batch=FileObject.batch_num, message=message)
+            #prepend the Batch # onto the message
             prnt_message = "batch # {batch} - {message}".format(
                     batch=FileObject.batch_num, message=message)
             prep = "\nBatch # {batch} - ".format(batch=FileObject.batch_num)
              
-            #
-            #
-            #f.write(prnt_message)
+            #Write the message and wrap text to fit in a line
             f.write(textwrap.fill(text=message, width=299,initial_indent=prep,subsequent_indent=prep[1:],
                                   ))
             f.close()
@@ -260,9 +264,9 @@ class Library:
 
     Attributes:
         FileObjects (list): Contains FileObjects
-        folder_name
-        read_success (bool): Checks if file read_succesfully
-        mt_object (obj): Music Tag object that is used to modify file
+        folder_name (str): The given user path to the folder
+        optional_count (int): Number of files to be loaded (if specified by user)
+        existing_count (int): Number of files that already have genres
     """
   
     def __init__(self, foldername,overwrite,optional_count=-1):
@@ -272,73 +276,123 @@ class Library:
         self.existing_count = 0
         self.get_objects(overwrite)
     def get_objects(self,overwrite):
+        """Iterates through directory and appends FileObject to FileObjects array
+        if neccesary.
+
+        Args:
+            overwrite (bool): Set to true if we are going to overwrite files that 
+            have existing genre. False if we are not overwriting. Defaulted to False.
+            
+        """
         directory = self.folder_name
         direct_list = os.listdir(directory)
+        # If we dont have a count
         if self.optional_count < 0:
             self.optional_count = len(direct_list)
+        # We do have a count
         elif self.optional_count > len(direct_list):
             self.optional_count = len(direct_list)
         count = 0
+        # Iterate over files
         for idx,file in enumerate(direct_list): 
             if count >= self.optional_count:
                 break
             filename = os.fsdecode(file)
+            # Make sure file is mp3
             if filename.endswith(".mp3"):
-                #print("filename: {filename}, directory: {directory}".format(
-                #filename=filename, directory=directory))
                 path = os.path.join(directory, filename)
+                # Create FileObject
                 current_song = FileObject(path)
+                # Overwite On
                 if overwrite:
                     self.FileObjects.append(current_song)
                     count += 1
+                # Overwrite off and there is no genre
                 elif not overwrite and current_song.genres == "":
                     self.FileObjects.append(current_song)
                     count += 1
+                # Overwrite off and there is no genre
                 elif current_song.genres != "":
                     self.existing_count += 1             
     def print_songs(self):
+        """Helper to print all FileObjects"""
         for song in self.FileObjects:
             song.print_song()
         
         
     def set_genres(self,loader):
+        """Responsible for initiating all processes: Getting current song data.
+        Getting current genre if it exists. Validating file information. Conducting
+        genre change.
+
+        Args:
+            loader (obj): The Loader object that will be responsible for
+            reporting current progress.
+        Returns:
+            (int), (int): # songs changed, artists not found
+
+        """
         songs_changed = 0
         artist_nf = 0 
         FileObject.batch_num = self.get_batch_num()
         for song in self.FileObjects:
+            # Get FileObject Data 
             song.get_song_data()
+            # Get genre. If artist not found  or genre not found 
+            # we add to our count for missin_data and log
             artist_nf += song.get_genre()
+            # Actually set genre and track count 
             songs_changed += song.set_genre()
+            #Update current message
             loader.message("{songs_changed}/{total} Converted. {issues} missing/errors".format(
                 songs_changed=songs_changed,total=len(self.FileObjects),issues=artist_nf))
 
      
         return songs_changed, artist_nf 
 
-    
+    # Currently not used 
     def chunks(self,lst,n):
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
             yield lst[i:i + n]
 
     def get_batch_num(self):
+        """Get the current batch number for this run"""
         error_file = "./error_log.txt"
         missing_file = "./missing_data.txt"
-        batch_num = max(self.file_checker(error_file),self.file_checker(missing_file))
+        success_file = "./success.txt"
+        # Take the maximum between the two log files
+        batch_num = max(self.file_checker(error_file),self.file_checker(missing_file),self.file_checker(success_file))
+        # Increase batch number if it exists
         if batch_num != -1:
             return batch_num + 1
         else:
             return 0
 
     def file_checker(self,PATH):
+        """Checks if batch number is present in file.
+        Args:
+            PATH (str): File path
+
+        Returns:
+            int: the batch number
+        """
         batch_num = -1 
-        if os.path.isfile(PATH) and os.access(PATH, os.R_OK):
-            with open(PATH) as f:
-                for line in f:
-                    pass
-                last_line = line
-                batch_num = int(line.split(" ")[2])
-        return batch_num 
+        # If file exists and readable
+        try:
+
+            if os.path.isfile(PATH) and os.access(PATH, os.R_OK):
+                with open(PATH) as f:
+                    for line in f:
+                        pass
+                    last_line = line
+                    batch_num = int(line.split(" ")[2])
+        except Exception as e:
+            print("Issue with getting batch #: error - {}".format(str(e)))
+        finally:
+            return batch_num
+
+        
 
 
 class Loader:
@@ -350,6 +404,10 @@ class Loader:
             desc (str, optional): The loader's description. Defaults to "Loading...".
             end (str, optional): Final print. Defaults to "Done!".
             timeout (float, optional): Sleep time between prints. Defaults to 0.1.
+        Attributes:
+            _thread (obj): private holds Thread object
+            steps (list): holds visualization steps
+            done (bool): False if ongoing, True if done
         """
         self.desc = desc
         self.end = end
@@ -360,12 +418,19 @@ class Loader:
         self.done = False
 
     def message(self,message):
+        """Setter for current message displayed
+
+        Args:
+            message (str): Message to be displayed
+        """
         self.desc = message
     def start(self):
+        """Begins the thread"""
         self._thread.start()
         return self
 
     def _animate(self):
+        """Animates the loading wheel"""
         for c in cycle(self.steps):
             if self.done:
                 break
@@ -373,9 +438,11 @@ class Loader:
             sleep(self.timeout)
 
     def __enter__(self):
+        """Commences thread"""
         self.start()
 
     def stop(self):
+        """Stops loader and prints end statement"""
         self.done = True
         cols = get_terminal_size((80, 20)).columns
         print("\r" + " " * cols, end="", flush=True)
@@ -386,6 +453,7 @@ class Loader:
         self.stop()
 
 
+# Runs Script
 if __name__ == "__main__":
     __main__()
 
