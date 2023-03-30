@@ -94,6 +94,7 @@ Inside `config.py` please insert the following if script doesn't succesfully cre
 - `client_id`: The spotify Client ID
 - `client_secret`:The Client Secret 
 
+You can alternatively use environment variables for your credentials. The script will check those as well.
 
 
 ## :open_file_folder: Getting Folder Path
@@ -105,10 +106,17 @@ You can either:
 1. `cd` into the folder directory and `pwd` once inside to get path. 
 2. Drag the folder into the terminal window when prompted to provide the folder path.
 
-Does not currently check in nested folders
-
+Does not currently check in nested folders so whatever mp3s you have placed in the folder will be processed.
 
 
 ## Troubleshooting
 
-Within the Spotify API genres are assosciated with artists not with tracks so genrify will try and get the "artist" metadata from the file in order to perform the search for a genre. If file does not contain an artist then this will be logged.
+Within the Spotify API genres are assosciated with artists (**not with song name**) so genrify will try and get the artist metadata from the file in order to perform the search for a genre. If file does not contain an artist then this will be logged.
+
+## :question: Why
+* I built this tool because I have a old ipod classic I want to use to play music with the mp3 songs I have and don't have any playlists set up or genres set for the mp3s. 
+    * The only option for listening to music was to shuffle the 1800+ songs I have.
+    * I figured if I had the songs in their respective genre then that would take care of categorizing the music and essentially create smart playlists.  
+    * Now that songs have genres I can select a genre I'm in the mood for and listen.
+
+<br/><br/> Hopefully this tool helps someone with a similar issue.

@@ -26,25 +26,34 @@ def __main__():
     """ Main Function that initiates genre conversion. Handles user input for runtime settings."""
     
     
+    folder_name = ""
     OVERWRITE = False
     song_limit = -1
-    folder_name = str(input("Please provide the folder path containing your MP3s:\n"))
+    # If no folder path given we will keep asking
+    while folder_name == "":
+        # Get folder name and strip weird space if neccessary 
+        folder_name = str(input("Please provide the folder path containing your MP3s:\n")).replace('\\ ', ' ').strip()
+        if folder_name.strip() == "":
+            print("No Path given for folder...\n")
+
+
+    # Check if Overwrite is on
     overwrite_setting = str(input("Would you like to overwrite current file's genres if they exist? Y/y or N/n\n")).lower()
-    
-    test = str("/Users/mrdenitz/Downloads/songs_downloaded_1879/")
     OVERWRITE = confirm(overwrite_setting)
+    # Double check to make sure the user wants to overwrite their genre data
     if OVERWRITE:
         you_sure = str(input("Are you sure you'd like to overwrite current song genres? Y/y or N/n\n")).lower()
         OVERWRITE = confirm(you_sure)
+    # Check for limit on how many mp3s are processed
     limit = str(input("Do you want to set a limit on how many songs you'd like to change? Y/y or N/n\n")).lower()
     if confirm(limit):
         song_limit = int(input("How many files do you want to change?\n"))
-    if folder_name == "":
-        folder_name = test
+    #  Get the song data using music_tag
     with Loader("Getting file song data...",""):
         lib = Library(folder_name,OVERWRITE,song_limit)
     loader = Loader("","")
 
+    # Now we will begin attempting to collect genre data from Spotify API
     loader.start()
     num_completed,num_artist_nf = lib.set_genres(loader)
     loader.stop()
@@ -58,7 +67,8 @@ def __main__():
     print("-----")
 
 def confirm(choice):
-    """ Checks user input for y or n 
+    """ Checks user input for y or n. Defaults to no if something other than
+        y or Y is inputted.
 
     Args:
         choice (str): Holds the user input string
@@ -114,8 +124,25 @@ class FileObject:
                                                  client_secret=config.client_secret)
         sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
     except Exception as e:
-        print("Issue with Oauth: {}".format(e))
-        exit()
+        print("Issue with Oauth: {}\n".format(e))
+        print("Attempting to resolve with Environment Variables.\n")
+        sleep(1)
+        try:
+             client_id = os.environ.get('client_id')
+             client_secret = os.environ.get('client_secret')
+             if client_id != None and client_secret != None:
+                 client_credentials_manager = SCC(client_id=client_id,
+                                                  client_secret=client_secret)
+                 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+                 print("Credentials verified using environment variables. Proceed.\n")
+                 sleep(1)
+             else:
+                 print("No Environment Variables Found...\n")
+                 print("Please either set client_id and client_secret in config.py file or set as environment variables.\n")
+                 exit()
+        except Exception as e:
+            print("Couldnt resolve with Environment Variables\n")
+            exit()
 
 
     batch_number = 0
