@@ -30,14 +30,10 @@
     <img src="https://img.shields.io/github/issues/mdenitz/genrify" alt="open issues" />
   </a>
   
-  <!--
-  <a href="https://github.com/couldbejake/awesome-readme-template/blob/master/LICENSE">
-    <img src="https://img.shields.io/github/license/couldbejake/awesome-readme-template.svg" alt="license" />
-  </a>-->
 </p>
    
 <h4>
-    <a href="https://github.com/mdenitz/genrify/wiki">Documentation</a>
+    <a href="https://github.com/mdenitz/genrify#readme">Documentation</a>
   <span> · </span>
     <a href="https://github.com/mdenitz/genrify/issues">Report Bug</a>
   <span> · </span>
@@ -86,7 +82,7 @@ Run the script
 
 ## :closed_lock_with_key: Spotify Credentials 
 
-If you do not have a config.py file upon initial run you will be prompted to create one.  
+If you do not have a `config.py` file upon initial run you will be prompted to create one.  
 
 
 Inside `config.py` please insert the following if script doesn't succesfully create one for you: 
@@ -120,3 +116,6 @@ Within the Spotify API genres are assosciated with artists (**not with song name
     * Now that songs have genres I can select a genre I'm in the mood for and listen.
 
 <br/><br/> Hopefully this tool helps someone with a similar issue.
+
+## Support with :coffee: 
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/mrdenitz)
