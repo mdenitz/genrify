@@ -21,6 +21,28 @@ from itertools import cycle
 from shutil import get_terminal_size
 from threading import Thread
 from time import sleep
+import requests
+from bs4 import BeautifulSoup
+import json
+# The following functions perform API calls using requests. This ends up being very slow.
+# If for some reason someone doesnt have access to spotify then uncommenting this code will work
+def get_new_token():
+    r = requests.request("GET", "https://open.spotify.com/")
+    r_text = BeautifulSoup(r.content, "html.parser").find("script", {"id": "session"}).get_text()
+    return json.loads(r_text)['accessToken']
+    
+def get_artist(artist_name,  token):
+    url ="https://api.spotify.com/v1/search?query=artist%3A{artist}&type=artist&locale=en-US%2Cen%3Bq%3D0.6&offset=0&limit=1".format(artist=artist_name)
+    payload={}
+    headers = {
+      'authorization': 'Bearer ' + str(token),
+      'Sec-Fetch-Dest': 'empty',
+      }
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return json.loads(response.text)   
+
+token = get_new_token()
+
 
 def __main__():
     """ Main Function that initiates genre conversion. Handles user input for runtime settings."""
@@ -233,8 +255,10 @@ class FileObject:
         elif self.check_file_loaded():
             try:
                 # API CALL
-                results = FileObject.sp.search(q='artist:{}'.format(self.searching_name),
-                                               type='artist',limit=1)
+                #results = FileObject.sp.search(q='artist:{}'.format(self.searching_name),
+                #                               type='artist',limit=1)
+   
+                results = get_artist(self.searching_name,token)
 
                 # Artist not found on Spotify
                 if results['artists']['items'] == []:
