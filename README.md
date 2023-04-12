@@ -75,7 +75,6 @@ Install desired packages using PIP
 
 `$ pip install -r requirements.txt`
 
-Please See 
 Run the script
 
 `$ python3 genrify.py`
