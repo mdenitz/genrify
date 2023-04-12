@@ -24,25 +24,7 @@ from time import sleep
 import requests
 from bs4 import BeautifulSoup
 import json
-# The following functions perform API calls using requests. This ends up being very slow.
-# If for some reason someone doesnt have access to spotify then uncommenting this code will work
-def get_new_token():
-    r = requests.request("GET", "https://open.spotify.com/")
-    r_text = BeautifulSoup(r.content, "html.parser").find("script", {"id": "session"}).get_text()
-    return json.loads(r_text)['accessToken']
     
-def get_artist(artist_name,  token):
-    url ="https://api.spotify.com/v1/search?query=artist%3A{artist}&type=artist&locale=en-US%2Cen%3Bq%3D0.6&offset=0&limit=1".format(artist=artist_name)
-    payload={}
-    headers = {
-      'authorization': 'Bearer ' + str(token),
-      'Sec-Fetch-Dest': 'empty',
-      }
-    response = requests.request("GET", url, headers=headers, data=payload)
-    return json.loads(response.text)   
-
-token = get_new_token()
-
 
 def __main__():
     """ Main Function that initiates genre conversion. Handles user input for runtime settings."""
@@ -105,10 +87,19 @@ def confirm(choice):
 
 
 def check_config():
-    """Checks if config file exists, if not then attempts to create one from user input"""
+    """Checks if config file exists, if not then attempts to create one from user input
+    Returns:
+        bool: True if we are using simple auth, false if not
+    """
+    scc_auth = str(input("Would you like to use Spotify client credentials flow (alternative is easy auth)? Y/y or N/n\n")).lower()
+    harder_auth = confirm(scc_auth)
+    if not harder_auth:
+        return False 
+
     config_exist = importlib.util.find_spec("config")
     if config_exist is None:
         print("No config file found:\n")
+        
         client_id = str(input("Please enter Spotify API Client ID:\n"))
         client_secret = str(input("Please enter Spotify API Client Secret:\n"))
         with  open("config.py", "w") as file:
@@ -116,9 +107,29 @@ def check_config():
             l2 = "client_secret='{}'\n".format(client_secret)
             file.writelines([l1, l2])
         file.close()
+    return True
+# The following functions perform API calls using requests. 
+def get_new_token():
+    """Gets API Key from Spotify if no credentials provided
+    Returns:
+        str: The API Key
+    """
+    try:
+        r = requests.request("GET", "https://open.spotify.com/")
+        r_text = BeautifulSoup(r.content, "html.parser").find("script", {"id": "session"}).get_text()
+        return json.loads(r_text)['accessToken']
+    except Exception as e:
+        print("Couldnt get API Key\n")
+        exit()
+
+
+token = None
 # We must check for config file before deciding to import
-check_config()
-import config
+if check_config():
+    import config
+else:
+    # if we dont have a config file or are choosing not to use then get token
+    token = get_new_token()
 
 
 
@@ -138,34 +149,85 @@ class FileObject:
         read_success (bool): Checks if file read_succesfully
         mt_object (obj): Music Tag object that is used to modify file
     """
-    # Tries to utilize Spotipy Client Credential Flow
-    # If no config.py file initiated then results in error
-    try:
+    def attempt_auth():
+        """Attempts to get Spotify Credentials from config.py. If no 
+        credentials found then environment variables are checked. If that doesn't
+        succeed then API Key is pulled from site
+        Returns:
+            obj: None if no spotipy client established, else spotipy client
+        """
 
-        client_credentials_manager = SCC(client_id=config.client_id,
-                                                 client_secret=config.client_secret)
-        sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-    except Exception as e:
-        print("Issue with Oauth: {}\n".format(e))
-        print("Attempting to resolve with Environment Variables.\n")
-        sleep(1)
+        if token is not None:
+            return None
+        # Tries to utilize Spotipy Client Credential Flow
+        # If no config.py file initiated then results in error
         try:
-             client_id = os.environ.get('client_id')
-             client_secret = os.environ.get('client_secret')
-             if client_id != None and client_secret != None:
-                 client_credentials_manager = SCC(client_id=client_id,
-                                                  client_secret=client_secret)
-                 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-                 print("Credentials verified using environment variables. Proceed.\n")
-                 sleep(1)
-             else:
-                 print("No Environment Variables Found...\n")
-                 print("Please either set client_id and client_secret in config.py file or set as environment variables.\n")
-                 exit()
-        except Exception as e:
-            print("Couldnt resolve with Environment Variables\n")
-            exit()
 
+            client_credentials_manager = SCC(client_id=config.client_id,
+                                                     client_secret=config.client_secret)
+            return spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+        except Exception as e:
+            print("Issue with Oauth: {}\n".format(e))
+            print("Attempting to resolve with Environment Variables.\n")
+            sleep(1)
+            try:
+                 client_id = os.environ.get('client_id')
+                 client_secret = os.environ.get('client_secret')
+                 if client_id != None and client_secret != None:
+                     client_credentials_manager = SCC(client_id=client_id,
+                                                      client_secret=client_secret)
+                     print("Credentials verified using environment variables. Proceed.\n")
+                     sleep(1)
+                     return spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+                 else:
+                     print("No Environment Variables Found...\n")
+                     #print("Please either set client_id and client_secret in config.py file or set as environment variables.\n")
+                     print("Now attempting to grab API Key from Spotify Site\n")
+                     return None
+            except Exception as e:
+                print("Couldnt resolve with Environment Variables\n")
+                return None
+    def get_artist(artist_name):
+        """Makes API call to get spotify genre info without credentials flow
+        Args:
+            artist_name (str): Name of the artist
+        Returns:
+            dict: The API call result
+        """
+        url ="https://api.spotify.com/v1/search?query=artist%3A{artist}&type=artist&locale=en-US%2Cen%3Bq%3D0.6&offset=0&limit=1".format(artist=artist_name)
+        payload={}
+        headers = {
+          'authorization': 'Bearer {}'.format(str(token)),
+          'Sec-Fetch-Dest': 'empty',
+          }
+        response = requests.request("GET", url, headers=headers, data=payload)
+        return json.loads(response.text)   
+
+
+
+    def get_result(searching_name):
+        """Searches for the genre using either credential flow or API Key
+        Args:
+            searching_name (str): Artist's name to search
+        Returns:
+            dict: Spotify search result
+        """
+        if FileObject.sp is not None:
+            return FileObject.sp.search(q='artist:{}'.format(searching_name),
+                                 type='artist',limit=1)
+
+        else:
+            return FileObject.get_artist(searching_name)
+
+
+    #Attempt to sign in with spotipy
+    sp = attempt_auth()
+    if sp is None:
+        #Modify token if no spotipy client
+        global token
+        token = get_new_token()
+        print("API Key succesfully retrieved from Spotify\n")
 
     batch_number = 0
     def __init__(self, file_path):
@@ -258,7 +320,7 @@ class FileObject:
                 #results = FileObject.sp.search(q='artist:{}'.format(self.searching_name),
                 #                               type='artist',limit=1)
    
-                results = get_artist(self.searching_name,token)
+                results = FileObject.get_result(self.searching_name)
 
                 # Artist not found on Spotify
                 if results['artists']['items'] == []:
