@@ -55,6 +55,7 @@
 <!-- Prerequisites -->
 ### :bangbang: Prerequisites
 
+If you dont want to use the easy authentication method:<br/>
 Please navigate to https://developer.spotify.com/dashboard and create app to acquire credentials  
 Have Client ID and Client Secret ready before running script
 <!-- Run Locally -->
