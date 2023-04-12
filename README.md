@@ -46,6 +46,7 @@
 **Genrify is a tool to add genre metadata to your mp3 files.The genre is acquired by using the mp3 file's artist metadata to search for the respective genre.**   
 
 * The script will utilize your Spotify app credentials stored in a `config.py` file within the project directory. 
+* You have the option of using simple auth without spotify credentials
 * You will provide the path to a folder that contains mp3 files for genrify to process.  
 * You have the option of overwriting files that contain existing genres as well as the option to specify the number of mp3 files that will be processed.
 <!-- Getting Started -->
@@ -82,6 +83,11 @@ Run the script
 
 ## :closed_lock_with_key: Spotify Credentials 
 
+You will be first prompted to choose an easy authentication method or client credential method.<br/><br/>
+The easy method:  
+Simple. API Key retrieved for you.
+
+Spotify client credential method: <br/>
 If you do not have a `config.py` file upon initial run you will be prompted to create one.  
 
 
